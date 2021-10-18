@@ -3,7 +3,6 @@ package com.bk.nz.reactivedemo.service;
 import com.bk.nz.reactivedemo.request.SimpleRequest;
 import com.bk.nz.reactivedemo.response.SimpleResponse;
 import com.bk.nz.reactivedemo.util.FutureExecutorService;
-import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -11,10 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -50,15 +46,11 @@ public class TestServiceImpl implements TestService {
     @Override
     public CompletableFuture<SimpleResponse> testReactiveWithExecutor(SimpleRequest simpleRequest) {
 
-        return futureExecutorService.execute(() -> {
-            var httpRequest = HttpRequest.newBuilder()
-                    .uri(URI.create(API_BASE_PATH + apiPath + "/" + simpleRequest.getDelayTime()))
-                    .POST(HttpRequest.BodyPublishers.ofString(""))
-                    .build();
-
-            var httpResponse = this.httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            return (new Gson()).fromJson(httpResponse.body(), SimpleResponse.class);
-        });
+        return futureExecutorService.execute(() -> this.webClient.post()
+                .uri(apiPath + "/" + simpleRequest.getDelayTime())
+                .contentType(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .bodyToMono(SimpleResponse.class).block());
     }
 
 }
